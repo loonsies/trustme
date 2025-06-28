@@ -11,4 +11,4 @@ that's all.
 
 ## Thanks & credits
 
-- [ThornyFFXI](https://github.com/ThornyFFXI) for the function to get trust (from [thotbar](https://github.com/ThornyFFXI/tHotBar))
+- [ThornyFFXI](https://github.com/ThornyFFXI) for the function to get trusts (from [thotbar](https://github.com/ThornyFFXI/tHotBar))
