@@ -1,4 +1,4 @@
-# nomorecrap
+# trustme
 
 A simple Ashita v4 addon meant to queue summmoning trusts
 
