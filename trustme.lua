@@ -185,7 +185,7 @@ local function drawUI()
         end
         imgui.SameLine()
 
-        if imgui.Button('Summon selected') then
+        if imgui.Button(string.format('Summon selected (%i)', #tme.search.selectedTrusts)) then
             if #tme.search.selectedTrusts ~= 0 then
                 for i = 1, #tme.search.selectedTrusts do
                     local entry = {
@@ -195,7 +195,7 @@ local function drawUI()
                      }
                     task.enqueue(entry)
                 end
-                eta = (eta or 0) + (#tme.search.selectedTrusts * 8)
+                tme.eta = (tme.eta or 0) + (#tme.search.selectedTrusts * 8)
             end
         end
         imgui.SameLine()
