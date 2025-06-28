@@ -8,3 +8,7 @@ A simple Ashita v4 addon meant to queue summmoning trusts
 `/trustme|tme|trusts|trust` Toggles the UI
 
 that's all.
+
+## Thanks & credits
+
+- [ThornyFFXI](https://github.com/ThornyFFXI) for the function to get trust (from [thotbar](https://github.com/ThornyFFXI/tHotBar))
