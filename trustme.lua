@@ -106,7 +106,7 @@ local function search()
     local input = table.concat(tme.search.input)
 
     for id, trust in pairs(trusts) do
-        if #input == 0 or trust.Name[1] and (string.find(trust.Name[1]:lower(), input:lower())) then
+        if #input == 0 or trust.Name[1] and (string.find(trust.Name[1]:lower(), input:lower(), 1, true)) then
             table.insert(tme.search.results, trust.Name[1])
         end
     end
