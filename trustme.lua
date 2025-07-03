@@ -17,7 +17,7 @@ local searchStatus = {
     found = 1,
     [0] = 'No results found',
     [1] = 'Found'
- }
+}
 
 tme = {
     visible = { false },
@@ -29,30 +29,11 @@ tme = {
         selectedTrusts = {},
         previousSelectedTrusts = nil,
         startup = true
-     },
+    },
     eta = 0,
     lastUpdateTime = os.clock(),
     queue = {}
- }
-
-local function GetJobPointCount(job, category)
-    local jobTable = playerData.JobPoints[job];
-    if not jobTable then
-        return 0;
-    end
-
-    local categories = jobTable.Categories;
-    if not categories then
-        return 0;
-    end
-
-    local count = categories[category + 1];
-    if not count then
-        return 0;
-    else
-        return count;
-    end
-end
+}
 
 local function getTrusts()
     local trusts = {}
@@ -62,6 +43,7 @@ local function getTrusts()
     local mainJobLevel = AshitaCore:GetMemoryManager():GetPlayer():GetMainJobLevel();
     local subJob = AshitaCore:GetMemoryManager():GetPlayer():GetSubJob();
     local subJobLevel = AshitaCore:GetMemoryManager():GetPlayer():GetSubJobLevel();
+    local jpTotal = AshitaCore:GetMemoryManager():GetPlayer():GetJobPoints(mainJob);
 
     for i = 1, 0x400 do
         local res = resMgr:GetSpellById(i)
@@ -73,7 +55,7 @@ local function getTrusts()
                 local hasSpell = false;
                 local jpMask = res.JobPointMask;
                 if (bit.band(bit.rshift(jpMask, mainJob), 1) == 1) then
-                    if (mainJobLevel == 99) and (player:GetJobPointTotal(mainJob) >= levelRequired[mainJob + 1]) then
+                    if (mainJobLevel == 99) and (jpTotal >= levelRequired[mainJob + 1]) then
                         hasSpell = true;
                     end
                 elseif (levelRequired[mainJob + 1] ~= -1) and (mainJobLevel >= levelRequired[mainJob + 1]) then
@@ -163,7 +145,7 @@ local function drawUI()
                                 type = taskTypes.summon,
                                 trustName = trustName,
                                 interval = 8
-                             }
+                            }
                             task.enqueue(entry)
                         end
 
@@ -192,7 +174,7 @@ local function drawUI()
                         type = taskTypes.summon,
                         trustName = tme.search.selectedTrusts[i],
                         interval = 8
-                     }
+                    }
                     task.enqueue(entry)
                 end
                 tme.eta = (tme.eta or 0) + (#tme.search.selectedTrusts * 8)
@@ -231,6 +213,7 @@ local function updateUI()
 
     if currentInput ~= previousInput or tme.search.startup then
         tme.search.results = {}
+        tme.search.startup = false
         search()
         tme.search.previousInput = { currentInput }
     end
