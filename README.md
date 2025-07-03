@@ -7,7 +7,13 @@ A simple Ashita v4 addon meant to queue summmoning trusts
 ## Commands
 `/trustme|tme|trusts|trust` Toggles the UI
 
-that's all.
+`/trustme profile|p profilename` Summon trusts from a specified profile name
+
+`/trustme trust|t Kupipi,Amchuchu,Sakura` Summon trusts from a sequence of trust name
+
+`/trustme current|c` Summon trusts from the currently loaded profile
+
+`/trustme load|l profilename` Load a profile using specified name
 
 ## Thanks & credits
 
