@@ -3,7 +3,7 @@ local throttle_timer = 0
 
 taskTypes = {
     summon = 1
- }
+}
 
 local function handleEntry(entry)
     if entry.type == taskTypes.summon then
@@ -34,7 +34,7 @@ function task.enqueue(entry)
     end
 end
 
-ashita.events.register('packet_out', 'packet_out_cb', function(e)
+ashita.events.register('packet_out', 'packet_out_cb', function (e)
     handleQueue()
 end)
 
