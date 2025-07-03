@@ -109,7 +109,7 @@ local function drawUI()
         else
             imgui.Text('No tasks queued')
         end
-        imgui.NewLine()
+        imgui.Separator()
 
         imgui.Text('Search (' .. #tme.search.results .. ')')
         imgui.SetNextItemWidth(-1)
