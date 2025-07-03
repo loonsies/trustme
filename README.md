@@ -2,7 +2,7 @@
 
 A simple Ashita v4 addon meant to queue summmoning trusts
 
-![image](https://github.com/user-attachments/assets/7b82ff3b-0ec7-4746-b83a-0d95ce3016e2)
+![image](https://github.com/user-attachments/assets/441dc53d-fec5-4824-81ef-3b1c4f3d3921)
 
 ## Commands
 `/trustme|tme|trusts|trust` Toggles the UI
