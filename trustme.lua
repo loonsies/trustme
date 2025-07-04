@@ -1,5 +1,5 @@
 addon.name = 'trustme'
-addon.version = "0.3"
+addon.version = '0.3'
 addon.author = 'looney'
 addon.desc = 'Simple addon to search through your trusts'
 addon.link = 'https://github.com/loonsies/trustme'
@@ -9,6 +9,8 @@ require 'common'
 chat = require('chat')
 settings = require('settings')
 imgui = require('imgui')
+http = require('socket.http')
+ltn12 = require('socket.ltn12')
 
 -- Local dependencies
 ui = require('src/ui')

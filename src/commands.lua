@@ -64,6 +64,22 @@ function commands.handleCommand(args)
                     print(chat.header(addon.name):append(chat.error('Unknown profile name. Aborting')))
                 end
             end
+        elseif arg == 'logincampaign' or arg == 'lc' then
+            print(chat.header(addon.name):append(chat.warning('Fetching trust ciphers from login campaign, this may take a while...')))
+            ashita.tasks.once(1, function ()
+                local ciphers = utils.fetchLoginCampaignCiphers()
+                if ciphers and #ciphers > 0 then
+                    local trusts = utils.getTrustNames(utils.getTrusts())
+                    local missingCiphers = utils.findMissingCiphers(ciphers, trusts)
+                    if #missingCiphers > 0 then
+                        print(chat.header(addon.name):append(chat.message(string.format('Current login campaign ciphers you are missing: %s', table.concat(missingCiphers, ', ')))))
+                    else
+                        print(chat.header(addon.name):append(chat.success('You already own every cipher sold in the current login campaign')))
+                    end
+                else
+                    print(chat.header(addon.name):append(chat.error('Failed to fetch current login campaign ciphers')))
+                end
+            end)
         end
     end
 end
