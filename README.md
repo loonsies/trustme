@@ -15,6 +15,8 @@ A simple Ashita v4 addon meant to queue summmoning trusts
 
 `/trustme load|l profilename` Load a profile using specified name
 
+`/trustme logincampaign|lc` Fetch and compare current login campaign's trusts for sale to tell you which ones you are missing
+
 ## Thanks & credits
 
 - [ThornyFFXI](https://github.com/ThornyFFXI) for the function to get trusts (from [thotbar](https://github.com/ThornyFFXI/tHotBar))
