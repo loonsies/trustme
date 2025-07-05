@@ -1,4 +1,14 @@
-ui = {}
+local imgui = require('imgui')
+local chat = require('chat')
+local settings = require('settings')
+local commands = require('src/commands')
+local search = require('src/search')
+local task = require('src/task')
+local profiles = require('src/profiles')
+local searchStatus = require('data/searchStatus')
+local profileActions = require('data/profileActions')
+
+local ui = {}
 
 local confirmationModal = {
     visible = false,
@@ -20,48 +30,57 @@ function ui.drawSearch()
     imgui.SetNextItemWidth(-1)
     imgui.InputText('##SearchInput', tme.search.input, 48)
 
-    if imgui.BeginTable('##SearchResultsTableChild', 2, bit.bor(ImGuiTableFlags_ScrollY), { 0, 150 }) then
-        imgui.TableSetupColumn('##TrustColumn', ImGuiTableColumnFlags_WidthStretch)
-        imgui.TableSetupColumn('##Action', ImGuiTableColumnFlags_WidthFixed)
-        if tme.search.status == searchStatus.found then
-            local clipper = ImGuiListClipper.new()
-            clipper:Begin(#tme.search.results, -1)
+    local availX, availY = imgui.GetContentRegionAvail()
+    local buttonsHeight = 75
 
-            while clipper:Step() do
-                for i = clipper.DisplayStart, clipper.DisplayEnd - 1 do
-                    local trustName = tme.search.results[i + 1]
-                    local isSelected = table.contains(tme.search.selectedTrusts, trustName)
+    if imgui.BeginChild('##SearchChild', { availX, availY - buttonsHeight }) then
+        if imgui.BeginTable('##SearchResultsTableChild', 2, bit.bor(ImGuiTableFlags_ScrollY)) then
+            imgui.TableSetupColumn('##TrustColumn', ImGuiTableColumnFlags_WidthStretch)
+            imgui.TableSetupColumn('##Action', ImGuiTableColumnFlags_WidthFixed)
+            if tme.search.status == searchStatus.found then
+                local clipper = ImGuiListClipper.new()
+                clipper:Begin(#tme.search.results, -1)
 
-                    imgui.PushID(trustName)
-                    imgui.TableNextRow()
+                while clipper:Step() do
+                    for i = clipper.DisplayStart, clipper.DisplayEnd - 1 do
+                        local trustName = tme.search.results[i + 1]
+                        local isSelected = table.contains(tme.search.selectedTrusts, trustName)
 
-                    imgui.TableSetColumnIndex(0)
-                    if imgui.Selectable(trustName, isSelected) then
-                        pos = table.find(tme.search.selectedTrusts, trustName)
-                        if pos ~= nil then
-                            table.delete(tme.search.selectedTrusts, trustName)
-                        else
-                            table.insert(tme.search.selectedTrusts, trustName)
+                        imgui.PushID(trustName)
+                        imgui.TableNextRow()
+
+                        imgui.TableSetColumnIndex(0)
+                        if imgui.Selectable(trustName, isSelected) then
+                            pos = table.find(tme.search.selectedTrusts, trustName)
+                            if pos ~= nil then
+                                table.delete(tme.search.selectedTrusts, trustName)
+                            else
+                                table.insert(tme.search.selectedTrusts, trustName)
+                            end
                         end
-                    end
 
-                    imgui.TableSetColumnIndex(1)
-                    if imgui.Button('Summon') then
-                        commands.summon({ trustName })
-                    end
+                        imgui.TableSetColumnIndex(1)
+                        if imgui.Button('Summon') then
+                            commands.summon({ trustName })
+                        end
 
-                    imgui.PopID()
+                        imgui.PopID()
+                    end
                 end
-            end
 
-            clipper:End()
-        else
-            imgui.TableNextRow()
-            imgui.TableSetColumnIndex(0)
-            imgui.Text(searchStatus[tme.search.status])
+                clipper:End()
+            else
+                imgui.TableNextRow()
+                imgui.TableSetColumnIndex(0)
+                imgui.Text(searchStatus[tme.search.status])
+            end
+            imgui.EndTable()
         end
-        imgui.EndTable()
+        imgui.EndChild()
     end
+
+    local selected = #tme.search.selectedTrusts > 0 and table.concat(tme.search.selectedTrusts, ', ') or 'None'
+    imgui.TextWrapped(string.format('Selected: %s', selected))
 end
 
 function ui.drawCommands()
@@ -162,7 +181,7 @@ function ui.drawInputModal(profile)
                 if profiles.getProfile(inputModal.input[1]) ~= nil then
                     inputModal.alreadyExisting = true
                 else
-                    profiles.saveProfile(inputModal.input[1], {})
+                    profiles.saveProfile(inputModal.input[1], tme.search.selectedTrusts)
                     if tme.selectedProfile == nil then
                         tme.selectedProfile = #tme.config.profiles
                     end
@@ -209,8 +228,6 @@ function ui.drawProfiles()
 
     imgui.SetCursorPosX(posX + availX - totalWidth)
 
-    local p = profiles.getProfiles()
-
     if imgui.Button('New', { newWidth, 0 }) then
         inputModal.visible = true
     end
@@ -246,19 +263,19 @@ function ui.drawProfiles()
     imgui.SameLine()
 
     if tme.selectedProfile ~= nil then
-        if p == nil or tme.selectedProfile > #p then
+        if tme.config.profiles == nil or tme.selectedProfile > #tme.config.profiles then
             tme.selectedProfile = nil
         end
     end
 
     local comboLabel = 'No profiles'
-    if p ~= nil and #p > 0 then
-        comboLabel = p[tme.selectedProfile] and p[tme.selectedProfile].name or 'Select a profile'
+    if tme.config.profiles ~= nil and #tme.config.profiles > 0 then
+        comboLabel = tme.config.profiles[tme.selectedProfile] and tme.config.profiles[tme.selectedProfile].name or 'Select a profile'
     end
 
     imgui.SetNextItemWidth(comboWidth)
     if imgui.BeginCombo('##ProfilesCombo', comboLabel) then
-        if p ~= nil and #p > 0 then
+        if tme.config.profiles ~= nil and #tme.config.profiles > 0 then
             if imgui.Selectable('None', tme.selectedProfile == nil) then
                 tme.selectedProfile = nil
                 tme.search.selectedTrusts = {}
@@ -268,13 +285,13 @@ function ui.drawProfiles()
 
             imgui.Separator()
 
-            for i = 1, #p do
+            for i = 1, #tme.config.profiles do
                 local isSelected = (tme.selectedProfile == i)
-                if imgui.Selectable(p[i].name, isSelected) then
+                if imgui.Selectable(tme.config.profiles[i].name, isSelected) then
                     tme.selectedProfile = i
                     profiles.loadTrusts(i)
                     tme.config.lastProfileLoaded = i
-                    settings.save(tme.config)
+                    settings.save()
                 end
             end
         else
@@ -287,7 +304,7 @@ end
 
 function ui.drawUI()
     imgui.SetNextWindowSizeConstraints(tme.minSize, { FLT_MAX, FLT_MAX })
-    if imgui.Begin('trustme', tme.visible, ImGuiWindowFlags_HorizontalScrollbar) then
+    if imgui.Begin('trustme', tme.visible, bit.bor(ImGuiWindowFlags_HorizontalScrollbar)) then
         if #tme.queue > 0 then
             local mins = math.floor(tme.eta / 60)
             local secs = math.floor(tme.eta % 60)

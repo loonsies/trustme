@@ -1,4 +1,4 @@
-profileActions = {
+local profileActions = {
     overwrite = 1,
     delete = 2,
     [1] = 'overwrite',

@@ -1,4 +1,6 @@
-profiles = {}
+local settings = require('settings')
+
+local profiles = {}
 
 local function findProfileIndex(profiles, name)
     for i, profile in ipairs(profiles) do
@@ -14,8 +16,8 @@ function profiles.getProfiles()
 end
 
 function profiles.getProfile(name)
-    local profiles = profiles.getProfiles()
-    for _, profile in ipairs(profiles) do
+    local p = profiles.getProfiles()
+    for _, profile in ipairs(p) do
         if profile.name == name then
             return profile
         end

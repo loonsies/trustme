@@ -1,4 +1,11 @@
-commands = {}
+local chat = require('chat')
+local task = require('src/task')
+local trustUtils = require('src/trustUtils')
+local profiles = require('src/profiles')
+local utils = require('src/utils')
+local taskTypes = require('data/taskTypes')
+
+local commands = {}
 
 function commands.summon(trusts)
     if trusts and #trusts > 0 then
@@ -59,27 +66,33 @@ function commands.handleCommand(args)
                 local profileIndex = profiles.getProfileIndex(arg2)
                 if profileIndex then
                     tme.selectedProfile = profileIndex
-                    print(chat.header(addon.name):append(chat.success(string.format('Loaded "%s" profile', arg2))))
+                    print(chat.header(addon.name):append(chat.success(string.format('Loaded profile "%s"', arg2))))
                 else
                     print(chat.header(addon.name):append(chat.error('Unknown profile name. Aborting')))
                 end
             end
         elseif arg == 'logincampaign' or arg == 'lc' then
-            print(chat.header(addon.name):append(chat.warning('Fetching trust ciphers from login campaign, this may take a while...')))
-            ashita.tasks.once(1, function ()
-                local ciphers = utils.fetchLoginCampaignCiphers()
-                if ciphers and #ciphers > 0 then
-                    local trusts = utils.getTrustNames(utils.getTrusts())
-                    local missingCiphers = utils.findMissingCiphers(ciphers, trusts)
-                    if #missingCiphers > 0 then
-                        print(chat.header(addon.name):append(chat.message(string.format('Current login campaign ciphers you are missing: %s', table.concat(missingCiphers, ', ')))))
-                    else
-                        print(chat.header(addon.name):append(chat.success('You already own every cipher sold in the current login campaign')))
-                    end
-                else
-                    print(chat.header(addon.name):append(chat.error('Failed to fetch current login campaign ciphers')))
-                end
-            end)
+            local started = trustUtils.fetchLoginCampaignCiphers()
+            if started then
+                print(chat.header(addon.name):append(chat.message('Fetching trust ciphers from login campaign...')))
+            end
+        elseif arg == 'missing' or arg == 'm' then
+            local hideUC = false
+            if arg2 ~= '' and arg2 == 'hideuc' then
+                hideUC = true
+            end
+            local missing = trustUtils.findMissingTrusts(trustUtils.getTrustNames(trustUtils.getTrusts()), hideUC)
+
+            if missing and #missing > 0 then
+                local output = table.concat(missing, ', ')
+                print(chat.header(addon.name):append(chat.message(string.format('Trusts you are missing (%i): %s', #missing, output))))
+            elseif missing and #missing == 0 then
+                print(chat.header(addon.name):append(chat.success('You already own every trust')))
+            else
+                print(chat.header(addon.name):append(chat.error('Failed to get missing trusts')))
+            end
+        elseif arg == 'test' then
+
         end
     end
 end

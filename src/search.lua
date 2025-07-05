@@ -1,8 +1,11 @@
-search = {}
+local trustUtils = require('src/trustUtils')
+local searchStatus = require('data/searchStatus')
+
+local search = {}
 
 function search.updateSearch()
     tme.search.results = {}
-    local trusts = utils.getTrusts()
+    local trusts = trustUtils.getTrusts()
     local input = table.concat(tme.search.input)
 
     for id, trust in pairs(trusts) do
