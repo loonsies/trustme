@@ -17,6 +17,8 @@ A simple Ashita v4 addon meant to queue summmoning trusts
 
 `/trustme logincampaign|lc` Fetch and compare current login campaign's trusts for sale to tell you which ones you are missing
 
+`/trustme missing|m [optional: hideuc]` Returns which trusts you don't own yet, adding hideuc hides the UC trusts from the output
+
 ## Thanks & credits
 
 - [ThornyFFXI](https://github.com/ThornyFFXI) for the function to get trusts (from [thotbar](https://github.com/ThornyFFXI/tHotBar))
