@@ -42,12 +42,10 @@ tme = {
 }
 
 ashita.events.register('load', 'load_cb', function ()
-    tme.config = config.load()
-    tme.selectedProfile = tme.config.lastProfileLoaded or nil
-    profiles.loadTrusts(tme.selectedProfile)
+    config.init(config.load())
 
     settings.register('settings', 'settings_update_cb', function (newConfig)
-        tme.config = newConfig
+        config.init(newConfig)
     end)
 end)
 
