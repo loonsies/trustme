@@ -58,7 +58,7 @@ function profiles.deleteProfile(name)
 end
 
 function profiles.loadTrusts(index)
-    if not tme.config.profiles then return end
+    if not tme.config.profiles or not index then return end
 
     local profile = tme.config.profiles[index]
     tme.search.selectedTrusts = {}
