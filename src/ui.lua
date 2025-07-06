@@ -97,9 +97,6 @@ function ui.drawCommands()
     imgui.SameLine()
 
     if imgui.Button('Stop') then
-        if #tme.queue > 0 then
-            print(chat.header(addon.name):append(chat.warning(string.format('Removed %i tasks from queue', #tme.queue))))
-        end
         task.clear()
     end
     imgui.SameLine()

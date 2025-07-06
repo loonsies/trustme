@@ -1,6 +1,7 @@
 local chat = require('chat')
 local http = require('socket.http')
 local ltn12 = require('socket.ltn12')
+local task = require('src/task')
 
 local utils = {}
 

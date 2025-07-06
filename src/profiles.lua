@@ -2,8 +2,8 @@ local settings = require('settings')
 
 local profiles = {}
 
-local function findProfileIndex(profiles, name)
-    for i, profile in ipairs(profiles) do
+local function findProfileIndex(p, name)
+    for i, profile in ipairs(p) do
         if profile.name == name then
             return i
         end
@@ -58,9 +58,11 @@ function profiles.deleteProfile(name)
 end
 
 function profiles.loadTrusts(index)
+    if not tme.config.profiles then return end
+
     local profile = tme.config.profiles[index]
     tme.search.selectedTrusts = {}
-    if profile.trusts then
+    if profile and profile.trusts then
         for _, trust in ipairs(profile.trusts) do
             table.insert(tme.search.selectedTrusts, trust)
         end

@@ -21,6 +21,9 @@ function task.handleQueue()
 end
 
 function task.clear()
+    if #tme.queue > 0 then
+        print(chat.header(addon.name):append(chat.warning(string.format('Removed %i tasks from queue', #tme.queue))))
+    end
     tme.queue = {}
     tme.eta = 0
 end

@@ -1,11 +1,12 @@
 addon.name = 'trustme'
-addon.version = "0.4"
+addon.version = '0.4'
 addon.author = 'looney'
 addon.desc = 'Simple addon to search through your trusts'
 addon.link = 'https://github.com/loonsies/trustme'
 
 require 'common'
 local chat = require('chat')
+local settings = require('settings')
 local config = require('src/config')
 local ui = require('src/ui')
 local commands = require('src/commands')
@@ -14,11 +15,12 @@ local search = require('src/search')
 local task = require('src/task')
 local profiles = require('src/profiles')
 local searchStatus = require('data/searchStatus')
+local utils = require('src/utils')
 local ffi = require('ffi')
 
 tme = {
     visible = { false },
-    config = config.load(),
+    config = {},
     search = {
         results = {},
         input = { '' },
@@ -35,12 +37,18 @@ tme = {
     minModalSize = { 450, 0 },
     selectedProfile = nil,
     worker = nil,
-    workerResult = nil
+    workerResult = nil,
+    zoning = false
 }
 
 ashita.events.register('load', 'load_cb', function ()
+    tme.config = config.load()
     tme.selectedProfile = tme.config.lastProfileLoaded or nil
     profiles.loadTrusts(tme.selectedProfile)
+
+    settings.register('settings', 'settings_update_cb', function (newConfig)
+        tme.config = newConfig
+    end)
 end)
 
 ashita.events.register('unload', 'unload_cb', function ()
@@ -61,6 +69,20 @@ ashita.events.register('command', 'command_cb', function (cmd, nType)
     local args = cmd.command:args()
     if #args ~= 0 then
         commands.handleCommand(args)
+    end
+end)
+
+ashita.events.register('packet_in', 'packet_in_cb', function (e)
+    if e.id == 0x000A then
+        if tme.zoning then
+            tme.visible[1] = true
+            tme.zoning = false
+        end
+    elseif e.id == 0x000B then
+        if tme.visible[1] then
+            tme.visible[1] = false
+            tme.zoning = true
+        end
     end
 end)
 
