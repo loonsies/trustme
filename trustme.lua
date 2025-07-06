@@ -1,9 +1,5 @@
 addon.name = 'trustme'
-<<<<<<< HEAD
-addon.version = '0.4'
-=======
-addon.version = "0.5"
->>>>>>> 04b56e86e1e0cb07df26586176fcd2983d633fd3
+addon.version = '0.5'
 addon.author = 'looney'
 addon.desc = 'Simple addon to search through your trusts'
 addon.link = 'https://github.com/loonsies/trustme'
