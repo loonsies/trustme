@@ -72,9 +72,29 @@ function commands.handleCommand(args)
                 end
             end
         elseif arg == 'logincampaign' or arg == 'lc' then
+            print(chat.header(addon.name):append(chat.message('Fetching trust ciphers from login campaign...')))
             local started = trustUtils.fetchLoginCampaignCiphers()
-            if started then
-                print(chat.header(addon.name):append(chat.message('Fetching trust ciphers from login campaign...')))
+
+            local ciphers = tme.workerResult or {}
+
+            tme.workerResult = nil
+
+            if #ciphers > 0 then
+                local ownedTrusts = trustUtils.getTrustNames(trustUtils.getTrusts())
+                local missingCiphers = trustUtils.findMissingCiphers(ciphers, ownedTrusts)
+                if #missingCiphers > 0 then
+                    local formattedList = {}
+                    for _, entry in ipairs(missingCiphers) do
+                        table.insert(formattedList, string.format('%s (%s)', entry.cipher, entry.name))
+                    end
+                    local output = table.concat(formattedList, ', ')
+
+                    print(chat.header(addon.name):append(chat.message(string.format('Current login campaign ciphers you are missing: %s', output))))
+                else
+                    print(chat.header(addon.name):append(chat.success('You already own every cipher sold in the current login campaign')))
+                end
+            else
+                print(chat.header(addon.name):append(chat.success('Failed to fetch current login campaign')))
             end
         elseif arg == 'missing' or arg == 'm' then
             local hideUC = false
