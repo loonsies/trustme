@@ -1,5 +1,5 @@
 addon.name = 'trustme'
-addon.version = "0.6"
+addon.version = '0.6'
 addon.author = 'looney'
 addon.desc = 'Simple addon to search through your trusts'
 addon.link = 'https://github.com/loonsies/trustme'
@@ -91,5 +91,4 @@ end)
 ashita.events.register('d3d_present', 'd3d_present_cb', function ()
     ui.updateETA()
     ui.updateUI()
-    --trustUtils.pollWorker()
 end)

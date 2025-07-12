@@ -31,56 +31,104 @@ function ui.drawSearch()
     imgui.InputText('##SearchInput', tme.search.input, 48)
 
     local availX, availY = imgui.GetContentRegionAvail()
-    local buttonsHeight = 75
 
-    if imgui.BeginChild('##SearchChild', { availX, availY - buttonsHeight }) then
-        if imgui.BeginTable('##SearchResultsTableChild', 2, bit.bor(ImGuiTableFlags_ScrollY)) then
-            imgui.TableSetupColumn('##TrustColumn', ImGuiTableColumnFlags_WidthStretch)
-            imgui.TableSetupColumn('##Action', ImGuiTableColumnFlags_WidthFixed)
-            if tme.search.status == searchStatus.found then
-                local clipper = ImGuiListClipper.new()
-                clipper:Begin(#tme.search.results, -1)
+    if imgui.BeginTable('##SearchResultsTableChild', 2, bit.bor(ImGuiTableFlags_ScrollY), { availX, availY }) then
+        imgui.TableSetupColumn('##TrustColumn', ImGuiTableColumnFlags_WidthStretch)
+        imgui.TableSetupColumn('##Action', ImGuiTableColumnFlags_WidthFixed)
+        if tme.search.status == searchStatus.found then
+            local clipper = ImGuiListClipper.new()
+            clipper:Begin(#tme.search.results, -1)
 
-                while clipper:Step() do
-                    for i = clipper.DisplayStart, clipper.DisplayEnd - 1 do
-                        local trustName = tme.search.results[i + 1]
-                        local isSelected = table.contains(tme.search.selectedTrusts, trustName)
+            while clipper:Step() do
+                for i = clipper.DisplayStart, clipper.DisplayEnd - 1 do
+                    local trustName = tme.search.results[i + 1]
+                    local isSelected = table.contains(tme.search.selectedTrusts, trustName)
 
-                        imgui.PushID(trustName)
-                        imgui.TableNextRow()
+                    imgui.PushID(trustName)
+                    imgui.TableNextRow()
 
-                        imgui.TableSetColumnIndex(0)
-                        if imgui.Selectable(trustName, isSelected) then
-                            pos = table.find(tme.search.selectedTrusts, trustName)
-                            if pos ~= nil then
-                                table.delete(tme.search.selectedTrusts, trustName)
-                            else
-                                table.insert(tme.search.selectedTrusts, trustName)
-                            end
+                    imgui.TableSetColumnIndex(0)
+                    if imgui.Selectable(trustName, isSelected) then
+                        pos = table.find(tme.search.selectedTrusts, trustName)
+                        if pos ~= nil then
+                            table.delete(tme.search.selectedTrusts, trustName)
+                        else
+                            table.insert(tme.search.selectedTrusts, trustName)
                         end
-
-                        imgui.TableSetColumnIndex(1)
-                        if imgui.Button('Summon') then
-                            commands.summon({ trustName })
-                        end
-
-                        imgui.PopID()
                     end
+
+                    imgui.TableSetColumnIndex(1)
+                    if imgui.Button('Summon') then
+                        commands.summon({ trustName })
+                    end
+
+                    imgui.PopID()
+                end
+            end
+
+            clipper:End()
+        else
+            imgui.TableNextRow()
+            imgui.TableSetColumnIndex(0)
+            imgui.Text(searchStatus[tme.search.status])
+        end
+        imgui.EndTable()
+    end
+end
+
+function ui.drawSelected()
+    if imgui.BeginChild('##SelectedChild', { 0, 125 }, true) then
+        if #tme.search.selectedTrusts > 0 then
+            for i, trustName in ipairs(tme.search.selectedTrusts) do
+                local popupId = trustName .. '_selected_menu'
+                imgui.PushID(trustName .. '_selected')
+
+                local clicked = imgui.Selectable(trustName, false, ImGuiSelectableFlags_AllowDoubleClick)
+                if clicked then
+                    imgui.OpenPopup(popupId)
                 end
 
-                clipper:End()
-            else
-                imgui.TableNextRow()
-                imgui.TableSetColumnIndex(0)
-                imgui.Text(searchStatus[tme.search.status])
+                if imgui.IsItemClicked(1) then -- right click
+                    imgui.OpenPopup(popupId)
+                end
+
+                if imgui.BeginPopup(popupId) then
+                    if imgui.MenuItem('Summon') then
+                        commands.summon({ trustName })
+                    end
+
+                    if imgui.MenuItem('Remove') then
+                        table.delete(tme.search.selectedTrusts, trustName)
+                    end
+
+                    if i == 1 then
+                        imgui.TextDisabled('Move up')
+                    else
+                        if imgui.MenuItem('Move up') then
+                            table.remove(tme.search.selectedTrusts, i)
+                            table.insert(tme.search.selectedTrusts, i - 1, trustName)
+                        end
+                    end
+
+                    if i == #tme.search.selectedTrusts then
+                        imgui.TextDisabled('Move down')
+                    else
+                        if imgui.MenuItem('Move down') then
+                            table.remove(tme.search.selectedTrusts, i)
+                            table.insert(tme.search.selectedTrusts, i + 1, trustName)
+                        end
+                    end
+
+                    imgui.EndPopup()
+                end
+
+                imgui.PopID()
             end
-            imgui.EndTable()
+        else
+            imgui.TextWrapped('Selected: None')
         end
         imgui.EndChild()
     end
-
-    local selected = #tme.search.selectedTrusts > 0 and table.concat(tme.search.selectedTrusts, ', ') or 'None'
-    imgui.TextWrapped(string.format('Selected: %s', selected))
 end
 
 function ui.drawCommands()
@@ -313,8 +361,11 @@ function ui.drawUI()
 
         ui.drawProfiles()
         imgui.Separator()
-        ui.drawSearch()
+        ui.drawSelected()
+        imgui.Separator()
         ui.drawCommands()
+        imgui.Dummy({ 0, 4 })
+        ui.drawSearch()
         ui.drawConfirmationModal()
         ui.drawInputModal()
         imgui.End()

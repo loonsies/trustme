@@ -26,6 +26,7 @@ function commands.handleCommand(args)
     local command = string.lower(args[1])
     local arg = #args > 1 and string.lower(args[2]) or ''
     local arg2 = #args > 2 and string.lower(args[3]) or ''
+    local arg2Raw = #args > 2 and args[3] or ''
 
     if command == '/tme' or command == '/trustme' or command == '/trusts' or command == '/trust' then
         if arg == '' then
@@ -42,7 +43,7 @@ function commands.handleCommand(args)
                 end
             end
         elseif arg == 'trust' or arg == 't' then
-            local trusts = utils.filterEmpty(string.split(arg2, ',') or {})
+            local trusts = utils.filterEmpty(string.split(arg2Raw, ',') or {})
             if arg2 == '' or trusts == nil or #trusts == 0 then
                 print(chat.header(addon.name):append(chat.error('Please provide a valid sequence of trusts. Aborting')))
             else
