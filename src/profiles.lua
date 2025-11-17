@@ -4,7 +4,7 @@ local profiles = {}
 
 local function findProfileIndex(p, name)
     for i, profile in ipairs(p) do
-        if profile.name == string.lower(name) then
+        if string.lower(profile.name) == string.lower(name) then
             return i
         end
     end
@@ -18,7 +18,7 @@ end
 function profiles.getProfile(name)
     local p = profiles.getProfiles()
     for _, profile in ipairs(p) do
-        if profile.name == string.lower(name) then
+        if string.lower(profile.name) == string.lower(name) then
             return profile
         end
     end
