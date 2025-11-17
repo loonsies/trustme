@@ -1,5 +1,4 @@
 local chat = require('chat')
-local thread = require('src/thread')
 local utils = require('src/utils')
 local cipherData = require('data/cipherData')
 
