@@ -77,7 +77,7 @@ function ui.drawSearch()
 end
 
 function ui.drawSelected()
-    if imgui.BeginChild('##SelectedChild', { 0, 125 }, true) then
+    if imgui.BeginChild('##SelectedChild', { 0, 125 }, ImGuiChildFlags_Border) then
         if #tme.search.selectedTrusts > 0 then
             for i, trustName in ipairs(tme.search.selectedTrusts) do
                 local popupId = trustName .. '_selected_menu'
@@ -368,8 +368,8 @@ function ui.drawUI()
         ui.drawSearch()
         ui.drawConfirmationModal()
         ui.drawInputModal()
-        imgui.End()
     end
+    imgui.End()
 end
 
 function ui.updateETA()
