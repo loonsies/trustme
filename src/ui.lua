@@ -18,9 +18,18 @@ local json = require('json')
 local ui = {}
 local categoryIcons = {}
 local skillchainIcons = {}
+local favoriteIcon = nil
+
+-- Color picker state
+local colorPickerState = {
+    visible = false,
+    trustName = nil,
+    color = { 1.0, 1.0, 0.0, 1.0 } -- default yellow
+}
 
 -- Category color tints
 local categoryColors = {
+    ['Favorites'] = { 1.0, 1.0, 0.0, 1.0 },              -- rgb(255, 255, 0) - default yellow
     ['Tank'] = { 0.078, 0.341, 0.961, 1.0 },             -- rgb(20, 87, 245)
     ['Melee Fighter'] = { 0.878, 0.173, 0.063, 1.0 },    -- rgb(224, 44, 16)
     ['Ranged Fighter'] = { 1.0, 0.518, 0.620, 1.0 },     -- rgb(255, 132, 158)
@@ -33,6 +42,7 @@ local categoryColors = {
 
 -- Ordered category list for dropdown
 local categoryOrder = {
+    'Favorites',
     'Tank',
     'Melee Fighter',
     'Ranged Fighter',
@@ -85,6 +95,19 @@ local function loadCategoryIcons()
             end
         end
     end
+
+    -- Load favorite icon
+    local favoriteIconPath = string.format('%s\\addons\\%s\\resources\\icons\\favorite.png',
+        AshitaCore:GetInstallPath(), addon.name)
+    local textureData = utils.createTextureFromFile(favoriteIconPath)
+    if textureData and textureData.Texture then
+        favoriteIcon = {
+            Texture = textureData.Texture,
+            Pointer = tonumber(ffi.cast('uint32_t', textureData.Texture)),
+            Width = textureData.Width,
+            Height = textureData.Height
+        }
+    end
 end
 
 -- Load skillchain icons
@@ -116,10 +139,16 @@ end
 
 -- Get categories for a trust
 local function getTrustCategories(trustName)
+    local categories = {}
+
+    -- Check if trust is favorited
+    if tme.config.favorites and tme.config.favorites[trustName] then
+        table.insert(categories, 'Favorites')
+    end
+
     -- Map in-game name to wiki name for lookup
     local lookupName = nameMapping[trustName] or trustName
 
-    local categories = {}
     for category, trusts in pairs(trustCategories) do
         for _, name in ipairs(trusts) do
             if name == lookupName then
@@ -184,7 +213,8 @@ function ui.drawSearch()
         end
         imgui.Separator()
         for _, category in ipairs(categoryOrder) do
-            if trustCategories[category] then
+            -- Show Favorites always, others only if they exist in trustCategories
+            if category == 'Favorites' or trustCategories[category] then
                 if imgui.Selectable(category, categoryFilter.selected == category) then
                     categoryFilter.selected = category
                 end
@@ -224,6 +254,7 @@ function ui.drawSearch()
                 for i = clipper.DisplayStart, clipper.DisplayEnd - 1 do
                     local trustName = filteredResults[i + 1]
                     local isSelected = table.contains(tme.search.selectedTrusts, trustName)
+                    local popupId = trustName .. '_search_menu'
 
                     imgui.PushID(trustName)
                     imgui.TableNextRow()
@@ -239,13 +270,29 @@ function ui.drawSearch()
                         end
                     end
 
+                    if imgui.IsItemClicked(1) then -- right click
+                        imgui.OpenPopup(popupId)
+                    end
+
                     -- Draw category icons after the trust name
                     local categories = getTrustCategories(trustName)
                     for _, category in ipairs(categories) do
-                        if categoryIcons[category] and categoryIcons[category].Pointer then
+                        local iconPtr = nil
+                        local tintColor = categoryColors[category] or { 1.0, 1.0, 1.0, 1.0 }
+
+                        if category == 'Favorites' then
+                            iconPtr = favoriteIcon and favoriteIcon.Pointer or nil
+                            -- Use custom color if set
+                            if tme.config.favorites and tme.config.favorites[trustName] then
+                                tintColor = tme.config.favorites[trustName]
+                            end
+                        else
+                            iconPtr = categoryIcons[category] and categoryIcons[category].Pointer or nil
+                        end
+
+                        if iconPtr then
                             imgui.SameLine()
-                            local tintColor = categoryColors[category] or { 1.0, 1.0, 1.0, 1.0 }
-                            imgui.ImageWithBg(categoryIcons[category].Pointer, { 16, 16 }, { 0, 0 }, { 1, 1 }, { 0, 0, 0, 0 }, tintColor)
+                            imgui.ImageWithBg(iconPtr, { 16, 16 }, { 0, 0 }, { 1, 1 }, { 0, 0, 0, 0 }, tintColor)
                             if imgui.IsItemHovered() then
                                 imgui.SetTooltip(category)
                             end
@@ -268,6 +315,38 @@ function ui.drawSearch()
                         commands.summon({ trustName })
                     end
                     imgui.PopStyleVar()
+
+                    -- Context menu
+                    if imgui.BeginPopup(popupId) then
+                        if imgui.MenuItem('Summon') then
+                            commands.summon({ trustName })
+                        end
+
+                        if imgui.MenuItem('Add to selection') then
+                            if not table.contains(tme.search.selectedTrusts, trustName) then
+                                table.insert(tme.search.selectedTrusts, trustName)
+                            end
+                        end
+
+                        imgui.Separator()
+
+                        -- Favorites menu
+                        local isFavorited = tme.config.favorites and tme.config.favorites[trustName] ~= nil
+                        if isFavorited then
+                            if imgui.MenuItem('Remove from favorites') then
+                                tme.config.favorites[trustName] = nil
+                                settings.save()
+                            end
+                        else
+                            if imgui.MenuItem('Add to favorites') then
+                                colorPickerState.visible = true
+                                colorPickerState.trustName = trustName
+                                colorPickerState.color = { 1.0, 1.0, 0.0, 1.0 } -- reset to yellow
+                            end
+                        end
+
+                        imgui.EndPopup()
+                    end
 
                     imgui.PopID()
                 end
@@ -320,10 +399,22 @@ function ui.drawSelected()
                     -- Draw category icons right next to name
                     local categories = getTrustCategories(trustName)
                     for _, category in ipairs(categories) do
-                        if categoryIcons[category] and categoryIcons[category].Pointer then
+                        local iconPtr = nil
+                        local tintColor = categoryColors[category] or { 1.0, 1.0, 1.0, 1.0 }
+
+                        if category == 'Favorites' then
+                            iconPtr = favoriteIcon and favoriteIcon.Pointer or nil
+                            -- Use custom color if set
+                            if tme.config.favorites and tme.config.favorites[trustName] then
+                                tintColor = tme.config.favorites[trustName]
+                            end
+                        else
+                            iconPtr = categoryIcons[category] and categoryIcons[category].Pointer or nil
+                        end
+
+                        if iconPtr then
                             imgui.SameLine()
-                            local tintColor = categoryColors[category] or { 1.0, 1.0, 1.0, 1.0 }
-                            imgui.ImageWithBg(categoryIcons[category].Pointer, { 16, 16 }, { 0, 0 }, { 1, 1 }, { 0, 0, 0, 0 }, tintColor)
+                            imgui.ImageWithBg(iconPtr, { 16, 16 }, { 0, 0 }, { 1, 1 }, { 0, 0, 0, 0 }, tintColor)
                             if imgui.IsItemHovered() then
                                 imgui.SetTooltip(category)
                             end
@@ -379,6 +470,23 @@ function ui.drawSelected()
                             if imgui.MenuItem('Move down') then
                                 table.remove(tme.search.selectedTrusts, i)
                                 table.insert(tme.search.selectedTrusts, i + 1, trustName)
+                            end
+                        end
+
+                        imgui.Separator()
+
+                        -- Favorites menu
+                        local isFavorited = tme.config.favorites and tme.config.favorites[trustName] ~= nil
+                        if isFavorited then
+                            if imgui.MenuItem('Remove from favorites') then
+                                tme.config.favorites[trustName] = nil
+                                settings.save()
+                            end
+                        else
+                            if imgui.MenuItem('Add to favorites') then
+                                colorPickerState.visible = true
+                                colorPickerState.trustName = trustName
+                                colorPickerState.color = { 1.0, 1.0, 0.0, 1.0 } -- reset to yellow
                             end
                         end
 
@@ -929,20 +1037,31 @@ function ui.drawInfoWindow()
         return
     end
 
-    imgui.SetNextWindowSize({ 600, 500 }, ImGuiCond_Always)
-    imgui.SetNextWindowPos({ imgui.GetIO().DisplaySize.x * 0.5, imgui.GetIO().DisplaySize.y * 0.5 }, ImGuiCond_Appearing, { 0.5, 0.5 })
+    imgui.SetNextWindowSize({ 600, 500 }, ImGuiCond_FirstUseEver)
+    imgui.SetNextWindowPos({ imgui.GetIO().DisplaySize.x * 0.5, imgui.GetIO().DisplaySize.y * 0.5 }, ImGuiCond_FirstUseEver, { 0.5, 0.5 })
 
-    if imgui.Begin(string.format('Trust information: %s', infoWindow.trustName), infoWindow.visible, ImGuiWindowFlags_None) then
+    if imgui.Begin(string.format('Trust information: %s###TrustInfoWindow', infoWindow.trustName), infoWindow.visible, ImGuiWindowFlags_None) then
         imgui.Text(infoWindow.trustName)
 
         local categories = getTrustCategories(infoWindow.trustName)
         if #categories > 0 then
             imgui.SameLine()
             for _, category in ipairs(categories) do
-                local icon = categoryIcons[category]
-                if icon and icon.Pointer then
-                    local tintColor = categoryColors[category] or { 1.0, 1.0, 1.0, 1.0 }
-                    imgui.ImageWithBg(icon.Pointer, { 24, 24 }, { 0, 0 }, { 1, 1 }, { 0, 0, 0, 0 }, tintColor)
+                local iconPtr = nil
+                local tintColor = categoryColors[category] or { 1.0, 1.0, 1.0, 1.0 }
+
+                if category == 'Favorites' then
+                    iconPtr = favoriteIcon and favoriteIcon.Pointer or nil
+                    -- Use custom color if set
+                    if tme.config.favorites and tme.config.favorites[infoWindow.trustName] then
+                        tintColor = tme.config.favorites[infoWindow.trustName]
+                    end
+                else
+                    iconPtr = categoryIcons[category] and categoryIcons[category].Pointer or nil
+                end
+
+                if iconPtr then
+                    imgui.ImageWithBg(iconPtr, { 24, 24 }, { 0, 0 }, { 1, 1 }, { 0, 0, 0, 0 }, tintColor)
                     if imgui.IsItemHovered() then
                         imgui.SetTooltip(category)
                     end
@@ -1083,6 +1202,54 @@ function ui.drawProfiles()
     end
 end
 
+function ui.drawColorPicker()
+    if not colorPickerState.visible then
+        return
+    end
+
+    imgui.SetNextWindowSize({ 265, 330 }, ImGuiCond_Always)
+    imgui.SetNextWindowPos({ imgui.GetIO().DisplaySize.x * 0.5, imgui.GetIO().DisplaySize.y * 0.5 }, ImGuiCond_Appearing, { 0.5, 0.5 })
+
+    local visible = { colorPickerState.visible }
+    if imgui.Begin('Favorite color', visible, ImGuiWindowFlags_NoResize) then
+        colorPickerState.visible = visible[1]
+
+        imgui.Text('Select color for: ' .. (colorPickerState.trustName or ''))
+        imgui.Separator()
+
+        if imgui.ColorPicker4('##FavoriteColorPicker', colorPickerState.color, ImGuiColorEditFlags_NoAlpha) then
+        end
+
+        imgui.Separator()
+
+        -- Buttons
+        if imgui.Button('Save', { 120, 0 }) then
+            if colorPickerState.trustName then
+                if not tme.config.favorites then
+                    tme.config.favorites = {}
+                end
+                tme.config.favorites[colorPickerState.trustName] = {
+                    colorPickerState.color[1],
+                    colorPickerState.color[2],
+                    colorPickerState.color[3],
+                    1.0
+                }
+                settings.save()
+            end
+            colorPickerState.visible = false
+        end
+
+        imgui.SameLine()
+        if imgui.Button('Cancel', { 120, 0 }) then
+            colorPickerState.visible = false
+        end
+
+        imgui.End()
+    else
+        colorPickerState.visible = visible[1]
+    end
+end
+
 function ui.drawUI()
     imgui.SetNextWindowSizeConstraints(tme.minSize, { FLT_MAX, FLT_MAX })
     if imgui.Begin('trustme', tme.visible, bit.bor(ImGuiWindowFlags_HorizontalScrollbar)) then
@@ -1104,6 +1271,7 @@ function ui.drawUI()
         ui.drawConfirmationModal()
         ui.drawInputModal()
         ui.drawMissingWindow()
+        ui.drawColorPicker()
     end
     imgui.End()
 end

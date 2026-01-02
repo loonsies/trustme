@@ -5,7 +5,8 @@ local config = {}
 
 local default = T {
     profiles = {},
-    lastProfileLoaded = nil
+    lastProfileLoaded = nil,
+    favorites = {}
 }
 
 config.load = function ()
