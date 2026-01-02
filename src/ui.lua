@@ -957,21 +957,23 @@ local function renderLine(lineItems)
 
                 imgui.Image(scIcon.Pointer, { iconSize, iconSize })
                 if imgui.IsItemHovered() then
-                    imgui.SetTooltip(item.value)
+                    local displayName = item.value == 'Status_Ability' and 'None' or item.value
+                    imgui.SetTooltip(displayName)
                 end
 
                 lineWidth = lineWidth + iconSize
                 firstInLine = false
             else
                 -- Fallback to colored text
-                local label = (addSpace and ' ' or '') .. '[' .. item.value .. ']'
+                local displayName = item.value == 'Status_Ability' and 'None' or item.value
+                local label = (addSpace and ' ' or '') .. '[' .. displayName .. ']'
                 local labelWidth = imgui.CalcTextSize(label)
 
                 if not firstInLine and (lineWidth + labelWidth > availWidth) then
                     firstInLine = true
                     lineWidth = 0
                     availWidth = imgui.GetContentRegionAvail()
-                    label = '[' .. item.value .. ']'
+                    label = '[' .. displayName .. ']'
                     labelWidth = imgui.CalcTextSize(label)
                 end
 
