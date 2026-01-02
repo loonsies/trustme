@@ -1,5 +1,5 @@
-local trustUtils = require('src/trustUtils')
-local searchStatus = require('data/searchStatus')
+local trustUtils = require('src.trustUtils')
+local searchStatus = require('data.searchStatus')
 
 local search = {}
 

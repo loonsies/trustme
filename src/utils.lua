@@ -1,7 +1,8 @@
-local chat = require('chat')
-local http = require('socket.http')
+local chat  = require('chat')
+local http  = require('socket.http')
 local ltn12 = require('socket.ltn12')
-local task = require('src/task')
+local ffi   = require('ffi')
+local d3d8  = require('d3d8');
 
 local utils = {}
 
@@ -39,49 +40,23 @@ function utils.filterEmpty(list)
     return result
 end
 
-local function getBaseUrl(url)
-    return url:match('^(https?://[^/]+)')
-end
-
-function utils.fetchUrl(url)
-    local maxRedirects = 5
-    local redirects = 0
-
-    while redirects < maxRedirects do
-        local response_body = {}
-        local _, statusCode, headers = http.request {
-            url = url,
-            sink = ltn12.sink.table(response_body)
-        }
-
-        local body = table.concat(response_body)
-
-        if not body then
-            print('HTTP request failed')
-            return nil
-        end
-
-        if statusCode >= 300 and statusCode < 400 then
-            local location = headers.location
-            if not location then
-                print('Redirect status but no Location header')
-                return nil
+function utils.createTextureFromFile(path)
+    if (path ~= nil) then
+        local dx_texture_ptr = ffi.new('IDirect3DTexture8*[1]')
+        local d3d8_device = d3d8.get_device()
+        if (ffi.C.D3DXCreateTextureFromFileA(d3d8_device, path, dx_texture_ptr) == ffi.C.S_OK) then
+            local texture = d3d8.gc_safe_release(ffi.cast('IDirect3DTexture8*', dx_texture_ptr[0]))
+            local result, desc = texture:GetLevelDesc(0)
+            if result == 0 then
+                tx         = {}
+                tx.Texture = texture
+                tx.Width   = desc.Width
+                tx.Height  = desc.Height
+                return tx
             end
-
-            if not location:match('^https?://') then
-                local base = getBaseUrl(url)
-                location = base .. location
-            end
-
-            url = location
-            redirects = redirects + 1
-        else
-            return body
+            return
         end
     end
-
-    print('Too many redirections')
-    return nil
 end
 
 return utils

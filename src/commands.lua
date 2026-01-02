@@ -1,24 +1,50 @@
 local chat = require('chat')
-local task = require('src/task')
-local trustUtils = require('src/trustUtils')
-local profiles = require('src/profiles')
-local utils = require('src/utils')
-local taskTypes = require('data/taskTypes')
+local task = require('src.task')
+local trustUtils = require('src.trustUtils')
+local profiles = require('src.profiles')
+local utils = require('src.utils')
+local taskTypes = require('data.taskTypes')
 
 local commands = {}
 
 function commands.summon(trusts)
     if trusts and #trusts > 0 then
-        print(chat.header(addon.name):append(chat.success(string.format('Summoning %s', table.concat(trusts, ', ')))))
+        local toSummon = {}
+        local duplicates = {}
+
+        -- Check for duplicates in queue
         for i = 1, #trusts do
-            local entry = {
-                type = taskTypes.summon,
-                trustName = trusts[i],
-                interval = 8
-            }
-            task.enqueue(entry)
+            local isDuplicate = false
+            for _, entry in ipairs(tme.queue) do
+                if entry.trustName == trusts[i] then
+                    isDuplicate = true
+                    table.insert(duplicates, trusts[i])
+                    break
+                end
+            end
+            if not isDuplicate then
+                table.insert(toSummon, trusts[i])
+            end
         end
-        tme.eta = (tme.eta or 0) + (#trusts * 8)
+
+        -- Log duplicates
+        if #duplicates > 0 then
+            print(chat.header(addon.name):append(chat.warning(string.format('Already in queue: %s', table.concat(duplicates, ', ')))))
+        end
+
+        -- Summon non-duplicates
+        if #toSummon > 0 then
+            print(chat.header(addon.name):append(chat.success(string.format('Summoning %s', table.concat(toSummon, ', ')))))
+            for i = 1, #toSummon do
+                local entry = {
+                    type = taskTypes.summon,
+                    trustName = toSummon[i],
+                    interval = 8
+                }
+                task.enqueue(entry)
+            end
+            tme.eta = (tme.eta or 0) + (#toSummon * 8)
+        end
     end
 end
 
@@ -74,29 +100,7 @@ function commands.handleCommand(args)
             end
         elseif arg == 'logincampaign' or arg == 'lc' then
             print(chat.header(addon.name):append(chat.message('Fetching trust ciphers from login campaign...')))
-            local started = trustUtils.fetchLoginCampaignCiphers()
-
-            local ciphers = tme.workerResult or {}
-
-            tme.workerResult = nil
-
-            if #ciphers > 0 then
-                local ownedTrusts = trustUtils.getTrustNames(trustUtils.getTrusts())
-                local missingCiphers = trustUtils.findMissingCiphers(ciphers, ownedTrusts)
-                if #missingCiphers > 0 then
-                    local formattedList = {}
-                    for _, entry in ipairs(missingCiphers) do
-                        table.insert(formattedList, string.format('%s (%s)', entry.cipher, entry.name))
-                    end
-                    local output = table.concat(formattedList, ', ')
-
-                    print(chat.header(addon.name):append(chat.message(string.format('Current login campaign ciphers you are missing: %s', output))))
-                else
-                    print(chat.header(addon.name):append(chat.success('You already own every cipher sold in the current login campaign')))
-                end
-            else
-                print(chat.header(addon.name):append(chat.success('Failed to fetch current login campaign')))
-            end
+            trustUtils.fetchLoginCampaignCiphers()
         elseif arg == 'missing' or arg == 'm' then
             local hideUC = false
             if arg2 ~= '' and arg2 == 'hideuc' then

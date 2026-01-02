@@ -1,22 +1,17 @@
 addon.name = 'trustme'
-addon.version = "0.8"
+addon.version = '0.8'
 addon.author = 'looney'
 addon.desc = 'Simple addon to search through your trusts'
 addon.link = 'https://github.com/loonsies/trustme'
 
 require 'common'
-local chat = require('chat')
 local settings = require('settings')
-local config = require('src/config')
-local ui = require('src/ui')
-local commands = require('src/commands')
-local trustUtils = require('src/trustUtils')
-local search = require('src/search')
-local task = require('src/task')
-local profiles = require('src/profiles')
-local searchStatus = require('data/searchStatus')
-local utils = require('src/utils')
-local ffi = require('ffi')
+local config = require('src.config')
+local ui = require('src.ui')
+local commands = require('src.commands')
+local task = require('src.task')
+local searchStatus = require('data.searchStatus')
+local http = require('libs.nonBlockingRequests')
 
 tme = {
     visible = { false },
@@ -33,7 +28,7 @@ tme = {
     eta = 0,
     lastUpdateTime = os.clock(),
     queue = {},
-    minSize = { 700, 200 },
+    minSize = { 575, 200 },
     minModalSize = { 450, 0 },
     selectedProfile = nil,
     workerResult = nil,
@@ -42,6 +37,7 @@ tme = {
 
 ashita.events.register('load', 'load_cb', function ()
     config.init(config.load())
+    ui.init()
 
     settings.register('settings', 'settings_update_cb', function (newConfig)
         config.init(newConfig)
@@ -76,4 +72,5 @@ end)
 ashita.events.register('d3d_present', 'd3d_present_cb', function ()
     ui.updateETA()
     ui.updateUI()
+    http.processAll()
 end)

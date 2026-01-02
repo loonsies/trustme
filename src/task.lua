@@ -1,5 +1,5 @@
 local chat = require('chat')
-local taskTypes = require('data/taskTypes')
+local taskTypes = require('data.taskTypes')
 
 local task = {}
 local throttle_timer = 0

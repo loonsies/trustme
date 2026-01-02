@@ -1,5 +1,5 @@
 local settings = require('settings')
-local profiles = require('src/profiles')
+local profiles = require('src.profiles')
 
 local config = {}
 

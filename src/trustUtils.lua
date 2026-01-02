@@ -1,25 +1,50 @@
 local chat = require('chat')
-local utils = require('src/utils')
-local cipherData = require('data/cipherData')
+local http = require('libs.nonBlockingRequests')
+local cipherData = require('data.cipherData')
 
 local trustUtils = {}
 
 function trustUtils.fetchLoginCampaignCiphers()
+    tme.workerResult = nil
+
     local url = 'https://www.bg-wiki.com/ffxi/Repeat_Login_Campaign#Current_Login_Campaign'
 
-    local response = utils.fetchUrl(url)
-    if not response then
-        return nil
-    end
-    local ciphers = {}
-
-    if response then
-        for cipher in response:gmatch('title="(Cipher: [^"]+)"') do
-            table.insert(ciphers, cipher)
+    http.get(url, nil, function (body, err, status)
+        if err then
+            print(chat.header(addon.name):append(chat.error(string.format('Failed to fetch current login campaign: %s', err))))
+            return
         end
-    end
 
-    tme.workerResult = ciphers
+        if not body then
+            print(chat.header(addon.name):append(chat.error('Failed to fetch current login campaign')))
+            return
+        end
+        local ciphers = {}
+
+        if body then
+            for cipher in body:gmatch('title="(Cipher: [^"]+)"') do
+                table.insert(ciphers, cipher)
+            end
+        end
+
+        tme.workerResult = ciphers
+
+        if #ciphers > 0 then
+            local ownedTrusts = trustUtils.getTrustNames(trustUtils.getTrusts())
+            local missingCiphers = trustUtils.findMissingCiphers(ciphers, ownedTrusts)
+            if #missingCiphers > 0 then
+                local formattedList = {}
+                for _, entry in ipairs(missingCiphers) do
+                    table.insert(formattedList, string.format('%s (%s)', entry.cipher, entry.name))
+                end
+                local output = table.concat(formattedList, ', ')
+
+                print(chat.header(addon.name):append(chat.message(string.format('Current login campaign ciphers you are missing: %s', output))))
+            else
+                print(chat.header(addon.name):append(chat.success('You already own every cipher sold in the current login campaign')))
+            end
+        end
+    end)
 
     return true
 end
