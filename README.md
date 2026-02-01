@@ -1,8 +1,32 @@
 # trustme
 
-A simple Ashita v4 addon meant to queue summmoning trusts
+**trustme** is an addon that provides Trust summoning management in a single, centralized interface.
 
-![image](https://github.com/user-attachments/assets/441dc53d-fec5-4824-81ef-3b1c4f3d3921)
+
+<p align="center">
+  <img width="705" style="max-width: 100%;" alt="image" src="https://github.com/user-attachments/assets/9a5b53b0-54c2-4859-83f1-b390b32866f5" />
+  <img width="679" style="max-width: 100%;" alt="image" src="https://github.com/user-attachments/assets/726fe786-0206-4e46-9119-198c7929d234" />
+</p>
+
+# Features
+
+### Trust Profiles
+- Create profiles to summon predefined sets of Trusts
+- Summon an entire profile with a single command or click
+
+### Trust Browser
+- Browse your available Trusts
+- Filter by:
+  - Search terms
+  - Category
+
+### Collection & Progress Tracking
+- Fetch current login campaign Trusts to see which ones you are missing
+- Check which Trusts you do not own yet
+
+### Trust Details & Wiki Integration
+- View parsed data for a specific Trust from **bg-wiki.com** in a stylized in-game window
+- Open related wiki pages directly from the same window
 
 ## Commands
 `/trustme|tme|trusts|trust` Toggles the UI
