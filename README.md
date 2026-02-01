@@ -2,10 +2,9 @@
 
 **trustme** is an addon that provides Trust summoning management in a single, centralized interface.
 
-
 <p align="center">
-  <img width="705" style="max-width: 100%;" alt="image" src="https://github.com/user-attachments/assets/9a5b53b0-54c2-4859-83f1-b390b32866f5" />
-  <img width="679" style="max-width: 100%;" alt="image" src="https://github.com/user-attachments/assets/726fe786-0206-4e46-9119-198c7929d234" />
+  <img width="600px" style="max-width: 100%;" alt="image" src="https://github.com/user-attachments/assets/9a5b53b0-54c2-4859-83f1-b390b32866f5" />
+  <img width="400px" style="max-width: 100%;" alt="image" src="https://github.com/user-attachments/assets/726fe786-0206-4e46-9119-198c7929d234" />
 </p>
 
 # Features
