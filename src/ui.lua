@@ -592,20 +592,47 @@ function ui.drawMissingWindow()
                 local totalMissing = #filteredMissing
                 imgui.Text(string.format('Total: %d', totalMissing))
 
+                local availX, availY = imgui.GetContentRegionAvail()
+
                 -- List of missing trusts (filtered)
-                if imgui.BeginChild('##MissingList', { 0, -30 }, ImGuiChildFlags_Borders) then
+                if imgui.BeginTable('##MissingList', 2, bit.bor(ImGuiTableFlags_ScrollY, ImGuiTableFlags_BordersOuter), { availX, availY - 30 }) then
+                    imgui.TableSetupColumn('##TrustColumn', ImGuiTableColumnFlags_WidthStretch)
+                    imgui.TableSetupColumn('##InfoAction', ImGuiTableColumnFlags_WidthFixed)
+
                     if #filteredMissing > 0 then
-                        for _, trustName in ipairs(filteredMissing) do
-                            imgui.Text(trustName)
+                        local clipper = ImGuiListClipper.new()
+                        clipper:Begin(#filteredMissing, -1)
+
+                        while clipper:Step() do
+                            for i = clipper.DisplayStart, clipper.DisplayEnd - 1 do
+                                local trustName = filteredMissing[i + 1]
+
+                                imgui.TableNextRow()
+
+                                imgui.TableSetColumnIndex(0)
+
+                                imgui.Text(trustName)
+
+                                imgui.TableSetColumnIndex(1)
+                                imgui.PushStyleVar(ImGuiStyleVar_FramePadding, { 4, 0 })
+                                if imgui.Button('Info##' .. trustName, { 0, 0 }) then
+                                    infoWindow.visible[1] = true
+                                    -- Map in-game name to wiki name for info lookup
+                                    infoWindow.trustName = nameMapping[trustName] or trustName
+                                    infoWindow.scrollY[1] = 0
+                                end
+                                imgui.PopStyleVar()
+                            end
                         end
+
+                        clipper:End()
+                    elseif missingWindow.missingTrusts and #missingWindow.missingTrusts > 0 then
+                        imgui.TextDisabled('No matches found')
                     else
-                        if missingWindow.missingTrusts and #missingWindow.missingTrusts > 0 then
-                            imgui.TextDisabled('No matches found')
-                        else
-                            imgui.TextDisabled('No missing trusts or click Refresh to load')
-                        end
+                        imgui.TextDisabled('No missing trusts or click Refresh to load')
                     end
-                    imgui.EndChild()
+
+                    imgui.EndTable()
                 end
 
                 -- Refresh button
